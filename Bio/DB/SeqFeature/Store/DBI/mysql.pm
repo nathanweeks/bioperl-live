@@ -1728,7 +1728,15 @@ sub _rebuild_obj {
         $self->{_seqid_cache}->{$db_seqid} = $seqid;
     }
     
-    # get the names from name table?
+    # get the name from name table
+    my $sql = qq{ SELECT name FROM name WHERE `id` = ? and display_name = 1 };
+    my $sth = $self->_prepare($sql) or $self->throw($self->dbh->errstr);
+    $sth->execute($id);
+    my $name = undef;
+    $sth->bind_columns(\$name);
+    while ($sth->fetch()) {
+        # there should be at most one row returned, but we ensure to get all rows
+    }
     
     # get the attributes and store those in obj
     my $sql = qq{ SELECT attribute_id,attribute_value FROM attribute WHERE `id` = ? };
@@ -1793,6 +1801,7 @@ sub _rebuild_obj {
                                          defined $start ? (-start => $start) : (),
                                          defined $end ? (-end => $end) : (),
                                          defined $strand ? (-strand => $strand) : (),
+                                         defined $name ? (-name => $name) : (),
                                          keys %attribs ? (-attributes => \%attribs) : ());
 
     return $obj;
