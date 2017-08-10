@@ -193,6 +193,7 @@ sub init {
       $dbi_options,
       $writeable,
       $create,
+      $no_blobs,
      ) = rearrange(['DSN',
 		    ['TEMP','TEMPORARY'],
 		    'AUTOINDEX',
@@ -203,6 +204,7 @@ sub init {
 		    ['OPTIONS','DBI_OPTIONS','DBI_ATTR'],
 		    ['WRITE','WRITEABLE'],
 		    'CREATE',
+            'NO_BLOBS',
 		   ],@_);
   $dbi_options  ||= {};
   $writeable    = 1 if $is_temporary or $dump_dir;
@@ -221,6 +223,7 @@ sub init {
   $self->{is_temp}   = $is_temporary;
   $self->{namespace} = $namespace;
   $self->{writeable} = $writeable;
+  $self->no_blobs(1) if $no_blobs;
 
   $self->default_settings;
   $self->autoindex($autoindex)                   if defined $autoindex;
@@ -1411,7 +1414,7 @@ sub insert {
   my $sth = $self->_prepare(<<END);
 INSERT INTO $features (id,object,indexed) VALUES (?,?,?)
 END
-  $sth->execute(undef,$self->freeze($object),$index_flag) or $self->throw($sth->errstr);
+  $sth->execute(undef,$self->no_blobs() ? 0 : $self->freeze($object),$index_flag) or $self->throw($sth->errstr);
   my $dbh = $self->dbh;
   $object->primary_id($dbh->{mysql_insertid});
   $self->flag_for_indexing($dbh->{mysql_insertid}) if $self->{bulk_update_in_progress};
@@ -1894,7 +1897,7 @@ sub _dump_store {
     $primary_tag    .= ":$source_tag";
     my $typeid   = $self->_typeid($primary_tag,1);
 
-    print $store_fh join("\t",$id,$typeid,$seqid,$start,$end,$strand,$tier,$bin,$indexed,$dbh->quote($self->freeze($obj))),"\n";
+    print $store_fh join("\t",$id,$typeid,$seqid,$start,$end,$strand,$tier,$bin,$indexed,$self->no_blobs() ? 0 : $dbh->quote($self->freeze($obj))),"\n";
     $obj->primary_id($id);
     $self->_update_indexes($obj) if $indexed && $autoindex;
     $count++;

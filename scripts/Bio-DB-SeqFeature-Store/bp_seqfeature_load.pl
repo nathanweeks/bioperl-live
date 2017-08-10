@@ -39,6 +39,7 @@ my $NOALIAS_TARGET	= 0;
 my $SUMMARY_STATS	= 0;
 my $NOSUMMARY_STATS  = 0;
 my $FTS = 0;
+my $NO_BLOBS = 0;
 
 ## Two flags based on http://stackoverflow.com/questions/1232116
 ## how-to-create-pod-and-use-pod2usage-in-perl
@@ -64,6 +65,7 @@ GetOptions( 'd|dsn=s'			=> \$DSN,
 	    'summary'			=> \$SUMMARY_STATS,
         'N|nosummary'    => \$NOSUMMARY_STATS,
 	    'fts'			=> \$FTS,
+	    'no_blobs'			=> \$NO_BLOBS,
 
 	    ## I miss '--help' when it isn't there!
 	    'h|help!'			=> \$opt_help,
@@ -201,6 +203,14 @@ Target attribute (if the feature contains a Target attribute, the
 default is to create an Alias attribute whose value is the target_id
 in the Target attribute)
 
+=item --no_blobs
+
+By default, feature data loaded into database tables are also stored in a
+Bio::DB::SeqFeature object in a feature table column. This option omits these
+objects, saving a lot of space in the database. Features retrieved from the
+resulting database will be Bio::SeqFeature::Lite instead of
+Bio::DB::SeqFeature.
+
 =back
 
 Please see http://www.sequenceontology.org/gff3.shtml for information
@@ -246,6 +256,7 @@ my $store = Bio::DB::SeqFeature::Store->new
     -create     => $CREATE,
     -compress   => $COMPRESS,
     -fts        => $FTS,
+    -no_blobs   => $NO_BLOBS,
 )
 or die "Couldn't create connection to the database";
 

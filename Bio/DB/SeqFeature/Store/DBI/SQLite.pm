@@ -235,6 +235,7 @@ sub init {
       $writeable,
       $fts,
       $create,
+      $no_blobs,
      ) = rearrange(['DSN',
 		    ['TEMP','TEMPORARY'],
 		    'AUTOINDEX',
@@ -246,6 +247,7 @@ sub init {
 		    ['WRITE','WRITEABLE'],
 		    'FTS',
 		    'CREATE',
+            'NO_BLOBS',
 		   ],@_);
   $dbi_options  ||= {};
   $writeable    = 1 if $is_temporary or $dump_dir;
@@ -271,6 +273,7 @@ sub init {
   $self->{is_temp}   = $is_temporary;
   $self->{namespace} = $namespace;
   $self->{writeable} = $writeable;
+  $self->no_blobs(1) if $no_blobs;
 
   $self->default_settings;
   $self->autoindex($autoindex)                   if defined $autoindex;
@@ -1071,7 +1074,7 @@ sub insert {
   my $sth = $self->_prepare(<<END);
 INSERT INTO $features (id,object,"indexed") VALUES (?,?,?)
 END
-  $sth->execute(undef,$self->freeze($object),$index_flag) or $self->throw($sth->errstr);
+  $sth->execute(undef,$self->no_blobs() ? 0 : $self->freeze($object),$index_flag) or $self->throw($sth->errstr);
   my $dbh = $self->dbh;
   $object->primary_id($dbh->func('last_insert_rowid'));
   $self->flag_for_indexing($dbh->func('last_insert_rowid')) if $self->{bulk_update_in_progress};
@@ -1159,7 +1162,7 @@ sub _dump_store {
     # Encode BLOB in hex so we can more easily import it into SQLite
     print $store_fh
     join("\t",$id,$typeid,$strand,$indexed,
-         unpack('H*', $self->freeze($obj))),"\n";
+         unpack('H*', $self->no_blobs() ? 0 : $self->freeze($obj))),"\n";
     $obj->primary_id($id);
     $self->_update_indexes($obj) if $indexed && $autoindex;
     $count++;

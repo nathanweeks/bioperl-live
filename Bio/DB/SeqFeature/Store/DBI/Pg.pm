@@ -186,6 +186,7 @@ sub init {
       $dbi_options,
       $writeable,
       $create,
+      $no_blobs,
       $schema,
      ) = rearrange(['DSN',
 		    ['TEMP','TEMPORARY'],
@@ -197,7 +198,8 @@ sub init {
 		    ['OPTIONS','DBI_OPTIONS','DBI_ATTR'],
 		    ['WRITE','WRITEABLE'],
 		    'CREATE',
-                    'SCHEMA'
+                    'NO_BLOBS',
+                    'SCHEMA',
 		   ],@_);
 
 
@@ -224,6 +226,7 @@ sub init {
   $self->{dbh}->{InactiveDestroy} = 1;
   $self->{is_temp}   = $is_temporary;
   $self->{writeable} = $writeable;
+  $self->no_blobs(1) if $no_blobs;
   $self->{namespace} = $namespace || $schema || 'public';
   $self->schema($self->{namespace});
 
