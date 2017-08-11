@@ -1702,7 +1702,8 @@ sub _rebuild_obj {
         ($type, $source) = @{$self->{_type_cache}->{$typeid}};
     }
     else {
-        my $sql = qq{ SELECT `tag` FROM typelist WHERE `id` = ? };
+        my $typelist_table = $self->_typelist_table;
+        my $sql = qq{ SELECT `tag` FROM $typelist_table WHERE `id` = ? };
         my $sth = $self->_prepare($sql) or $self->throw($self->dbh->errstr);
         $sth->execute($typeid);
         my $result;
@@ -1720,7 +1721,8 @@ sub _rebuild_obj {
         $seqid = $self->{_seqid_cache}->{$db_seqid};
     }
     else {
-        my $sql = qq{ SELECT `seqname` FROM locationlist WHERE `id` = ? };
+        my $locationlist_table = $self->_locationlist_table;
+        my $sql = qq{ SELECT `seqname` FROM $locationlist_table WHERE `id` = ? };
         my $sth = $self->_prepare($sql) or $self->throw($self->dbh->errstr);
         $sth->execute($db_seqid);
         $sth->bind_columns(\$seqid);
@@ -1732,7 +1734,8 @@ sub _rebuild_obj {
     }
     
     # get the name from name table
-    my $sql = qq{ SELECT name FROM name WHERE `id` = ? and display_name = 1 };
+    my $name_table = $self->_name_table;
+    my $sql = qq{ SELECT name FROM $name_table WHERE `id` = ? and display_name = 1 };
     my $sth = $self->_prepare($sql) or $self->throw($self->dbh->errstr);
     $sth->execute($id);
     my $name = undef;
@@ -1742,7 +1745,8 @@ sub _rebuild_obj {
     }
     
     # get the attributes and store those in obj
-    my $sql = qq{ SELECT attribute_id,attribute_value FROM attribute WHERE `id` = ? };
+    my $attribute_table = $self->_attribute_table;
+    my $sql = qq{ SELECT attribute_id,attribute_value FROM $attribute_table WHERE `id` = ? };
     my $sth = $self->_prepare($sql) or $self->throw($self->dbh->errstr);
     $sth->execute($id);
     my ($attribute_id, $attribute_value);
@@ -1755,7 +1759,8 @@ sub _rebuild_obj {
             $attribute = $self->{_attribute_cache}->{$attribute_id};
         }
         else {
-            my $sql = qq{ SELECT `tag` FROM attributelist WHERE `id` = ? };
+            my $attributelist_table = $self->_attributelist_table;
+            my $sql = qq{ SELECT `tag` FROM $attributelist_table WHERE `id` = ? };
             my $sth2 = $self->_prepare($sql) or $self->throw($self->dbh->errstr);
             $sth2->execute($attribute_id);
             $sth2->bind_columns(\$attribute);
@@ -1774,6 +1779,8 @@ sub _rebuild_obj {
     }
 
     # if we weren't called with all the params, pull those out of the database too
+    # NOTE: this can't work with the MySQL adaptor, as only the SQLite adaptor
+    #       currently has a feature_location table
     if ( not ( grep { defined($_) } ( $typeid, $db_seqid, $start, $end, $strand ))) {
       my $sql = qq{ SELECT start,end,tag,strand,seqname
                     FROM feature,feature_location,typelist,locationlist
