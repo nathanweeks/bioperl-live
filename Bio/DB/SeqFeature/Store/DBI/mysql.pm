@@ -1770,7 +1770,7 @@ sub _rebuild_obj {
             next;
         }
         
-        $attribs{$attribute} = $attribute_value;
+        push(@{$attribs{$attribute}}, $attribute_value);
     }
 
     # if we weren't called with all the params, pull those out of the database too
